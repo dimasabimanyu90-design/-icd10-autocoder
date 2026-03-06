@@ -1,9 +1,6 @@
 [build]
-  publish = "icd10-app"
+  publish = "."
   functions = "netlify/functions"
-
-[functions]
-  node_bundler = "esbuild"
 
 [functions."claude"]
   timeout = 26
