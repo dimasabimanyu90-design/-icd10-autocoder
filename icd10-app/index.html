@@ -661,7 +661,7 @@ textarea::placeholder { color: #b8b0a6; font-style: italic; }
 
 </main>
 
-<p class="disclaimer">
+<p class="disclaimer" style="text-align:center;font-size:11px;color:var(--muted);margin-top:40px;line-height:1.8;font-family:'IBM Plex Mono',monospace;letter-spacing:0.3px;width:100%">
   ⚠ Tools ini hanya untuk keperluan akademik / belajar coding.<br>
   Selalu verifikasi dengan buku ICD-10 Vol.1, Vol.3 dan ICD-9-CM yang berlaku.<br>
   Bukan pengganti penilaian coder profesional bersertifikat.
@@ -820,17 +820,21 @@ validations array: include ERRORs (coding violations), WARNINGs (possible issues
 Output MUST be valid complete JSON only.`;
 
   try {
-    const resp = await fetch("/api/claude", {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: PROMPT })
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        messages: [{ role: "user", content: PROMPT }]
+      })
     });
 
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
-    if (data.error) throw new Error(data.error);
+    if (data.error) throw new Error(data.error.message);
 
-    const raw = data.text;
+    const raw = data.content.map(i => i.text || "").join("");
     let clean = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
 
     const match = clean.match(/\{[\s\S]*\}/);
