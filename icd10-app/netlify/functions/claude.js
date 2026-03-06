@@ -20,7 +20,7 @@ exports.handler = async function(event, context) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return { statusCode: 500, body: JSON.stringify({ error: "GEMINI_API_KEY not configured" }) };
+      return { statusCode: 500, body: JSON.stringify({ error: "GEMINI_API_KEY tidak ditemukan di environment variables" }) };
     }
 
     let data, response;
@@ -34,8 +34,7 @@ exports.handler = async function(event, context) {
             contents: [{ parts: [{ text: body.prompt }] }],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 4096,
-              responseMimeType: "application/json"
+              maxOutputTokens: 4096
             }
           })
         }
@@ -43,28 +42,37 @@ exports.handler = async function(event, context) {
 
       data = await response.json();
 
-      if (data.error && data.error.code === 429) {
+      // Retry on 429
+      if (response.status === 429 || (data.error && data.error.code === 429)) {
         if (attempt < 3) {
           await new Promise(r => setTimeout(r, attempt * 3000));
           continue;
         } else {
           return {
             statusCode: 429,
-            body: JSON.stringify({ error: "Terlalu banyak permintaan. Tunggu 1 menit lalu coba lagi." })
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ error: "Rate limit. Tunggu 1 menit lalu coba lagi." })
           };
         }
       }
       break;
     }
 
+    // Return Gemini error details to frontend for debugging
     if (data.error) {
-      return { statusCode: 500, body: JSON.stringify({ error: `Gemini error: ${data.error.message}` }) };
+      return {
+        statusCode: 500,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ error: `Gemini: ${data.error.code} - ${data.error.message}` })
+      };
     }
 
     if (!data.candidates || data.candidates.length === 0) {
+      const reason = data.promptFeedback?.blockReason || JSON.stringify(data);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: `Gemini tidak menghasilkan respons: ${data.promptFeedback?.blockReason || 'unknown'}` })
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ error: `Tidak ada respons dari Gemini. Info: ${reason}` })
       };
     }
 
@@ -83,7 +91,8 @@ exports.handler = async function(event, context) {
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      headers: { "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ error: `Server error: ${err.message}` })
     };
   }
 };
