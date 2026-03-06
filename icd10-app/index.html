@@ -752,120 +752,20 @@ async function analyze() {
   if (!input) return;
   setLoading(true);
 
-  const PROMPT = `You are a certified medical coder expert in ICD-10 2nd Edition 2005 (WHO) and ICD-9-CM Volume 3 procedures. Analyze the clinical note and produce accurate coding following STRICT coding conventions.
+  const PROMPT = `You are an expert ICD-10 2nd Edition 2005 (WHO) and ICD-9-CM Vol.3 medical coder. Analyze the clinical note and return JSON only.
 
-CLINICAL NOTE:
-${input}
+CLINICAL NOTE: ${input}
 
-CODING RULES YOU MUST FOLLOW:
+RULES:
+- DU (Diagnosis Utama) = condition established AFTER STUDY chiefly responsible for admission (WHO Vol.2). Use final diagnosis, not admitting complaint.
+- Dagger† = etiology = DU if primary. Asterisk* = manifestation = always DS, never DU. Assign both together.
+- Bekas SC = DS or Z code, not DU unless sole reason for admission.
+- Vol.3: show lead term index path. Vol.1: report includes/excludes/notes per code.
+- Validate: asterisk as DU=ERROR, missing pair=ERROR, excludes violated=ERROR, wrong DU=WARNING, [BPJS] flag if INA-CBGs issue.
+- Abbreviations: SC/SCTP=sectio caesarea, TTTS=twin-twin transfusion syndrome, IUFD=intrauterine fetal death, gemelli=twins, partus prematurus=preterm labour, kista ovarium=ovarian cyst, kistektomi=cystectomy, bekas SC=previous caesarean scar, HT=hypertension, DM=diabetes mellitus, ORIF=open reduction internal fixation, ai=atas indikasi.
 
-1. DIAGNOSIS: Use ICD-10 2nd Edition 2005 (WHO) codes only.
-
-2. DIAGNOSIS UTAMA (DU) SELECTION — STRICT WHO ICD-10 Vol.2 Rules:
-   The Main Condition (DU) = "the condition established AFTER STUDY to be chiefly responsible for occasioning the patient's admission to hospital."
-   
-   Step-by-step DU selection:
-   a) Identify the FINAL diagnosis after all investigations (not the admitting complaint)
-   b) If multiple conditions exist → choose the one most responsible for the ADMISSION decision
-   c) If admission diagnosis ≠ final diagnosis → use FINAL diagnosis
-   d) If a condition has dagger† code → dagger is DU (never asterisk*)
-   e) Comorbidities, complications, symptoms → assign as DS (secondary)
-   f) "Bekas SC / previous caesarean" is NOT DU unless it is the sole reason for admission — it is usually DS or Z code
-   g) Symptoms that are integral to a disease → do NOT code separately
-   h) If two conditions equally caused admission → select the one that used more resources/investigation
-   i) Z codes (factors influencing health) → only DU if no disease code applies
-   
-3. DAGGER-ASTERISK CONVENTION:
-   - Dagger (†) = etiology code → always DU if primary condition
-   - Asterisk (*) = manifestation code → always DS, NEVER DU
-   - Both must be assigned together; dagger first
-   
-4. VOLUME 3 INDEX: Show exact lead term path from ICD-10 Vol.3 Alphabetical Index.
-
-5. VOLUME 1 TABULAR: For each code report relevant notes:
-   - Includes, Excludes, Note, Use additional code, Code first
-
-6. VALIDATION — check strictly:
-   - Asterisk code as DU → ERROR
-   - Symptom coded when underlying disease known → WARNING  
-   - Missing dagger/asterisk pair → ERROR
-   - Excludes note violated → ERROR
-   - Missing "use additional code" companion → WARNING
-   - DU is a comorbidity not responsible for admission → WARNING
-   - DU is Z code when disease code available → WARNING
-   - Bekas SC coded as DU when it should be DS → WARNING
-   - BPJS flag: codes that may cause issues in INA-CBGs grouping → INFO with label [BPJS]
-
-7. BPJS/INA-CBGs AWARENESS:
-   - Flag any code that commonly causes claim rejection in Indonesian BPJS system
-   - Note if DU selection may affect INA-CBGs grouper result
-   - Flag if procedure code does not match diagnosis group
-
-8. PROCEDURE: Use ICD-9-CM Volume 3, show lead term path.
-
-9. Indonesian abbreviations:
-   SC/SCTP=sectio caesarea transperitonealis, TTTS=twin-to-twin transfusion syndrome,
-   IUFD=intrauterine fetal death, gemelli=multiple gestation twins,
-   partus prematurus=preterm labour, kista ovarium=ovarian cyst,
-   kistektomi=ovarian cystectomy, bekas SC=uterine scar from previous caesarean,
-   G2P1A0=gravida 2 para 1 abortus 0, P2A0=para 2 abortus 0,
-   HT=hypertension, DM=diabetes mellitus, OD/OS/ODS=oculus dexter/sinister/uterque,
-   ORIF=open reduction internal fixation, ai=atas indikasi (due to / because of),
-   Hb=hemoglobin, TD=tekanan darah (blood pressure), RJ=rawat jalan, RI=rawat inap
-
-Return ONLY a valid JSON object. NO markdown, NO backticks, NO text outside JSON:
-
-{
-  "summary": "Ringkasan klinis 2-3 kalimat",
-  "du_reasoning": "Penjelasan mengapa kondisi ini dipilih sebagai DU berdasarkan kaidah WHO Vol.2 — kondisi apa yang paling bertanggung jawab atas keputusan rawat inap setelah dikaji",
-  "validations": [
-    {
-      "type": "ERROR|WARNING|INFO",
-      "message": "Deskripsi masalah. Prefix [BPJS] jika terkait klaim INA-CBGs"
-    }
-  ],
-  "diagnoses": [
-    {
-      "role": "DU",
-      "code": "O34.2",
-      "dagger_asterisk": "none",
-      "description": "Maternal care due to uterine scar from previous surgery",
-      "category": "Chapter XV — Pregnancy, childbirth and the puerperium",
-      "confidence": 92,
-      "lead_term_path": "Section\\n- caesarean (see also Delivery, caesarean) O82.9\\n- caesarean (for) O82.9\\n- - previous\\n- - - caesarean section O34.2\\nO34.2 Maternal care due to uterine scar from previous surgery",
-      "volume1_notes": [
-        {"type": "includes", "text": "..."},
-        {"type": "excludes", "text": "..."},
-        {"type": "note", "text": "..."},
-        {"type": "use_additional", "text": "..."},
-        {"type": "code_first", "text": "..."}
-      ],
-      "paired_with": "",
-      "reasoning": "Alasan pemilihan kode ini"
-    }
-  ],
-  "procedures": [
-    {
-      "code": "74.1",
-      "description": "Low cervical caesarean section",
-      "category": "ICD-9-CM Vol.3",
-      "confidence": 95,
-      "lead_term_path": "Cesarean section\\n- low cervical 74.1",
-      "volume1_notes": [
-        {"type": "includes", "text": "..."}
-      ],
-      "reasoning": "Alasan kode prosedur ini"
-    }
-  ]
-}
-
-Rules:
-- dagger_asterisk: "dagger", "asterisk", or "none"
-- volume1_notes type: "includes", "excludes", "note", "use_additional", "code_first"
-- Only include volume1_notes that are actually present and relevant
-- validations: ERRORs first, then WARNINGs, then INFOs. Empty [] if none
-- du_reasoning: always explain the WHO Vol.2 logic used to select DU
-- Output MUST be valid complete JSON only`;
+Return ONLY this JSON, no markdown:
+{"summary":"2-3 sentence clinical summary","du_reasoning":"Why this DU per WHO Vol.2","validations":[{"type":"ERROR|WARNING|INFO","message":"..."}],"diagnoses":[{"role":"DU","code":"O34.2","dagger_asterisk":"none|dagger|asterisk","description":"...","category":"Chapter...","confidence":92,"lead_term_path":"Section\\n- term O34.2","volume1_notes":[{"type":"includes|excludes|note|use_additional|code_first","text":"..."}],"paired_with":"","reasoning":"..."}],"procedures":[{"code":"74.1","description":"...","category":"ICD-9-CM Vol.3","confidence":95,"lead_term_path":"Term\\n- subterm 74.1","volume1_notes":[],"reasoning":"..."}]}`;
 
   try {
     const resp = await fetch("/api/claude", {
