@@ -1,57 +1,117 @@
-# ICD-10 Auto Coder
+# 📖 Manual Instruksi — ICD-10 Auto Coder
 **Created by Dimas Abimanyu · Powered by Google Gemini AI**
 
-Aplikasi auto coding ICD-10 2nd Edition 2005 + ICD-9-CM Vol.3 berbasis AI.
-**100% Gratis — Pakai Google Gemini API (no credit card!)**
+> Aplikasi bantu coding diagnosis ICD-10 2nd Edition 2005 (WHO) dan prosedur ICD-9-CM Volume 3 berbasis kecerdasan buatan.
 
 ---
 
-## 🔑 Langkah 1 — Dapat API Key Gratis
-1. Buka [aistudio.google.com](https://aistudio.google.com)
-2. Login pakai akun Google biasa
-3. Klik **"Get API Key"** → **"Create API key"**
-4. Copy API key-nya
+## 🌐 Akses Aplikasi
+Buka browser → kunjungi: **https://autocodingicd10.netlify.app/**
 
 ---
 
-## 🚀 Langkah 2 — Deploy ke Netlify (Gratis)
-1. Buka [netlify.com](https://netlify.com) → Login / daftar gratis
-2. Klik **"Add new site"** → **"Deploy manually"**
-3. **Drag & drop folder `icd10-app`** ke halaman Netlify
-4. Tunggu deploy selesai
+## 🚀 Cara Penggunaan
+
+### 1. Masukkan Catatan Klinis
+- Paste **resume medis**, **catatan SOAP**, atau **anamnesa** pasien ke dalam kotak teks
+- Bisa dalam **Bahasa Indonesia** maupun **Bahasa Inggris**
+- Semakin lengkap catatan → semakin akurat hasil coding
+
+**Informasi yang sebaiknya ada:**
+- Diagnosis akhir dokter
+- Tindakan/prosedur yang dilakukan
+- Riwayat penyakit relevan (bekas SC, DM, HT, dll)
+- Hasil pemeriksaan penunjang
+
+### 2. Gunakan Contoh Kasus (Opsional)
+Klik tombol contoh kasus yang tersedia untuk mencoba:
+- `▸ Obstetri (Ny. X)` — kasus persalinan kompleks
+- `▸ STEMI` — serangan jantung
+- `▸ Stroke + HT` — stroke dengan hipertensi
+- `▸ DM + Retinopati` — diabetes dengan komplikasi
+- `▸ Fraktur Femur` — patah tulang
+
+### 3. Klik "Analyze & Code"
+Tunggu beberapa detik, AI akan menganalisis dan menghasilkan kode.
 
 ---
 
-## ⚙️ Langkah 3 — Set API Key di Netlify
-1. Di dashboard Netlify → klik site kamu
-2. **Site configuration** → **Environment variables**
-3. Klik **"Add a variable"**
-   - Key: `GEMINI_API_KEY`
-   - Value: API key dari Google AI Studio
-4. Klik **Save**
+## 📋 Membaca Hasil Coding
 
----
+### Badge Diagnosis
+| Badge | Arti |
+|-------|------|
+| 🔴 **DU** | Diagnosis Utama — kondisi utama penyebab perawatan |
+| 🔵 **DS** | Diagnosis Sekunder — komorbiditas/komplikasi |
+| 🟢 **PROC** | Prosedur tindakan (ICD-9-CM) |
 
-## 🔄 Langkah 4 — Redeploy
-1. Tab **Deploys** → **"Trigger deploy"** → **"Deploy site"**
-2. Selesai! App sudah online 🎉
+### Simbol Dagger-Asterisk
+| Simbol | Arti | Posisi |
+|--------|------|--------|
+| **†** (Dagger) | Kode etiologi/penyebab | Selalu DU jika berpasangan |
+| **\*** (Asterisk) | Kode manifestasi | Selalu DS, **tidak boleh** jadi DU |
 
----
+> ⚠️ Kode dagger dan asterisk **selalu berpasangan** — keduanya harus dicantumkan, dagger ditulis lebih dulu.
 
-## 📁 Struktur File
+### Volume 3 Index Path
+Menampilkan jalur penelusuran dari **ICD-10 Volume 3 Alphabetical Index**, contoh:
 ```
-icd10-app/
-├── index.html                  ← Aplikasi utama
-├── netlify.toml                ← Konfigurasi Netlify
-├── netlify/
-│   └── functions/
-│       └── claude.js           ← Backend proxy (simpan API key)
-└── README.md                   ← Panduan ini
+Section
+- caesarean (for) O82.9
+- - previous
+- - - caesarean section O34.2
+O34.2 Maternal care due to uterine scar from previous surgery
 ```
+Klik tombol **📋 Copy** untuk menyalin jalur index.
+
+### Volume 1 Tabular Notes
+Menampilkan catatan penting dari **ICD-10 Volume 1** per kode:
+| Label | Warna | Arti |
+|-------|-------|------|
+| **Includes** | Hijau | Kondisi yang termasuk dalam kode ini |
+| **Excludes** | Merah | Kondisi yang dikecualikan — perhatikan! |
+| **Note** | Biru | Catatan tambahan penggunaan kode |
+| **Use additional code** | Kuning | Wajib tambahkan kode pendamping |
+| **Code first** | Pink | Kode ini harus ditulis setelah kode lain |
+
+### Validasi Kaidah Coding
+Banner oranye di atas hasil berisi peringatan otomatis:
+- 🔴 **ERROR** — pelanggaran kaidah coding
+- 🟡 **WARNING** — potensi masalah yang perlu dicek
+- 🔵 **INFO** — pengingat penting
+
+### Confidence Score
+Persentase keyakinan AI terhadap kode yang dipilih:
+- **90–100%** — diagnosis eksplisit, kode sangat yakin
+- **70–89%** — probable, sebaiknya diverifikasi
+- **< 70%** — perlu verifikasi manual lebih teliti
 
 ---
 
-## ✅ Kenapa Gratis Selamanya?
-- Google Gemini API free tier: 1.500 request/hari, 1 juta token/menit
-- Netlify free tier: 125.000 function calls/bulan
-- Tidak perlu credit card sama sekali!
+## ⚠️ Penting Diperhatikan
+1. **Selalu verifikasi** hasil coding dengan buku ICD-10 Vol.1, Vol.3, dan ICD-9-CM yang berlaku
+2. Kode dengan confidence **< 80%** wajib dicek manual
+3. Periksa semua **Excludes notes** — bisa membatalkan penggunaan kode
+4. Aplikasi ini **bukan pengganti** penilaian coder profesional bersertifikat
+5. Untuk keperluan **akademik dan pembelajaran** saja
+
+---
+
+## 🔤 Singkatan Medis yang Dikenali
+| Singkatan | Kepanjangan |
+|-----------|-------------|
+| SC / SCTP | Sectio Caesarea Transperitonealis |
+| TTTS | Twin-to-Twin Transfusion Syndrome |
+| IUFD | Intrauterine Fetal Death |
+| Gemelli | Multiple Gestation (Kembar) |
+| Partus prematurus | Preterm Labour |
+| Bekas SC | Uterine Scar from Previous Caesarean |
+| HT | Hypertension |
+| DM | Diabetes Mellitus |
+| ORIF | Open Reduction Internal Fixation |
+| ai | Atas Indikasi (Due to / Because of) |
+| OD/OS/ODS | Oculus Dexter/Sinister/Uterque |
+
+---
+
+*Created by Dimas Abimanyu · Powered by Google Gemini AI*
