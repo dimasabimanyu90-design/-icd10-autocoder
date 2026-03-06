@@ -879,10 +879,13 @@ Rules:
     if (data.error) throw new Error(data.error);
 
     const raw = data.text;
+    if (!raw || raw.trim() === '') throw new Error("Respons kosong dari AI. Coba lagi.");
+
     let clean = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
 
+    // Try to extract JSON object
     const match = clean.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("Respons tidak mengandung JSON yang valid.");
+    if (!match) throw new Error("Format respons tidak valid. Coba lagi dengan catatan yang lebih lengkap.");
     clean = match[0];
 
     let result;
@@ -895,7 +898,11 @@ Rules:
       const braces = (fixed.match(/\{/g)||[]).length - (fixed.match(/\}/g)||[]).length;
       for(let i=0;i<opens;i++) fixed += ']';
       for(let i=0;i<braces;i++) fixed += '}';
-      result = JSON.parse(fixed);
+      try {
+        result = JSON.parse(fixed);
+      } catch(e2) {
+        throw new Error("Gagal memproses respons AI. Pastikan catatan klinis lengkap dan coba lagi.");
+      }
     }
 
     renderResults(result);
