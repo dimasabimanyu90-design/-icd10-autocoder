@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto Coding ICD-10 & ICD-9-CM</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1c1917;
+  --paper: #faf7f2;
+  --cream: #f2ede4;
+  --rule: #ddd6ca;
+  --muted: #78716c;
+  --red: #b91c1c;
+  --red-light: #fee2e2;
+  --blue: #1d4ed8;
+  --blue-light: #dbeafe;
+  --green: #15803d;
+  --green-light: #dcfce7;
+  --gold: #92400e;
+  --gold-light: #fef3c7;
+  --shadow-sm: 0 1px 3px rgba(28,25,23,.08);
+  --shadow: 0 4px 20px rgba(28,25,23,.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--paper);
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* Subtle dot grid background */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(circle, #c8bfb0 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ── */
+header {
+  position: relative; z-index: 10;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+  border-bottom: 3px solid var(--red);
+}
+.logo-wrap { display: flex; align-items: baseline; gap: 14px; }
+.logo-main {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  letter-spacing: 0.3px;
+  color: #fff;
+}
+.logo-sep { width: 1px; height: 18px; background: #444; }
+.logo-sub {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #a8a29e;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.header-tags { display: flex; gap: 8px; }
+.htag {
+  font-size: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+.htag-red { background: var(--red); color: #fff; }
+.htag-outline { border: 1px solid #444; color: #a8a29e; }
+
+/* ── MAIN ── */
+main {
+  position: relative; z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* ── SECTION TITLE ── */
+.section-rule {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 16px;
+}
+.section-rule-line { flex: 1; height: 1px; background: var(--rule); }
+.section-rule-label {
+  font-size: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── INPUT CARD ── */
+.input-card {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+.input-card-header {
+  background: var(--cream);
+  border-bottom: 1px solid var(--rule);
+  padding: 12px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.input-card-title {
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.lang-tags { display: flex; gap: 6px; }
+.lang-tag {
+  font-size: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 2px 7px;
+  background: #fff;
+}
+.input-card-body { padding: 20px; }
+
+textarea {
+  width: 100%;
+  min-height: 160px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 14px 16px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  resize: vertical;
+  line-height: 1.7;
+  outline: none;
+  transition: border-color .2s;
+}
+textarea:focus { border-color: var(--ink); background: #fff; }
+textarea::placeholder { color: #b8b0a6; font-style: italic; }
+
+.examples-row {
+  display: flex; flex-wrap: wrap; gap: 7px;
+  margin-top: 12px;
+}
+.ex-btn {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted);
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.ex-btn:hover { border-color: var(--ink); color: var(--ink); background: #fff; }
+
+.action-row {
+  display: flex; gap: 10px; align-items: center;
+  margin-top: 16px;
+}
+.btn-analyze {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 12px 24px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: all .2s;
+  letter-spacing: -0.2px;
+}
+.btn-analyze:hover:not(:disabled) {
+  background: var(--red);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(185,28,28,.25);
+}
+.btn-analyze:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.btn-clear {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 11px 16px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-clear:hover { border-color: var(--muted); color: var(--ink); }
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── RESULTS ── */
+#resultsSection { display: none; }
+
+.summary-strip {
+  background: var(--gold-light);
+  border: 1px solid #fcd34d;
+  border-left: 4px solid var(--gold);
+  border-radius: 3px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 13.5px;
+  color: var(--gold);
+  line-height: 1.65;
+}
+.summary-strip strong { font-weight: 600; display: block; margin-bottom: 4px; font-size: 10px; letter-spacing: 0.8px; text-transform: uppercase; }
+
+/* ── CODING TABLE ── */
+.coding-table-wrap {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+.coding-table-header {
+  background: var(--ink);
+  color: #fff;
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.coding-table-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.coding-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #a8a29e;
+}
+
+.diag-item {
+  border-bottom: 1px solid var(--rule);
+  animation: fadeUp .3s ease forwards;
+  opacity: 0; transform: translateY(6px);
+}
+.diag-item:last-child { border-bottom: none; }
+@keyframes fadeUp { to { opacity:1; transform: translateY(0); } }
+
+.diag-main {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: start;
+}
+
+/* DU / DS badge */
+.du-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 7px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+.du-badge.du { background: var(--red); color: #fff; }
+.du-badge.ds { background: var(--blue-light); color: var(--blue); border: 1px solid #93c5fd; }
+.du-badge.proc { background: var(--green-light); color: var(--green); border: 1px solid #86efac; }
+
+.diag-center { flex: 1; }
+.diag-code-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 5px;
+}
+.diag-code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 1px;
+}
+.dagger-mark {
+  font-size: 13px;
+  color: var(--red);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+}
+.asterisk-mark {
+  font-size: 13px;
+  color: var(--blue);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+}
+.diag-desc {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+  margin-bottom: 3px;
+}
+.diag-category {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.conf-wrap {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  min-width: 70px;
+}
+.conf-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.conf-bar {
+  width: 64px; height: 4px;
+  background: var(--rule);
+  border-radius: 10px; overflow: hidden;
+}
+.conf-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: var(--ink);
+  transition: width .5s ease;
+}
+
+/* Lead term path */
+.lead-term-box {
+  background: var(--cream);
+  border-top: 1px dashed var(--rule);
+  padding: 10px 20px 10px 52px;
+}
+.lead-label {
+  font-size: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.lead-path {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--ink);
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.lead-path .lp-indent { color: var(--muted); }
+.lead-path .lp-code { color: var(--red); font-weight: 500; }
+.lead-path .lp-final { color: var(--ink); font-weight: 500; }
+
+/* Reasoning */
+.reasoning-box {
+  background: #f9f9f7;
+  border-top: 1px solid var(--rule);
+  padding: 10px 20px 10px 52px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.65;
+  font-style: italic;
+}
+
+/* Dagger-asterisk legend */
+.legend {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  padding: 10px 20px;
+  background: var(--cream);
+  border-top: 1px solid var(--rule);
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted);
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+
+/* Procedure section */
+.proc-table-wrap {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+.proc-header {
+  background: var(--green);
+  color: #fff;
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.proc-header-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Volume 1 notes box */
+.vol1-box {
+  background: #f0f4ff;
+  border-top: 1px solid #c7d7f7;
+  padding: 10px 20px 10px 52px;
+}
+.vol1-label {
+  font-size: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 6px;
+}
+.vol1-notes { display: flex; flex-direction: column; gap: 5px; }
+.vol1-note {
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--ink);
+  line-height: 1.6;
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.vol1-note-type {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.vnt-includes { background: #d1fae5; color: #065f46; }
+.vnt-excludes { background: #fee2e2; color: var(--red); }
+.vnt-note { background: #e0e7ff; color: #3730a3; }
+.vnt-use { background: #fef3c7; color: var(--gold); }
+.vnt-code-first { background: #fce7f3; color: #9d174d; }
+
+/* Validation warning */
+.validation-banner {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-left: 4px solid #f97316;
+  border-radius: 3px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 12.5px;
+  color: #9a3412;
+  line-height: 1.65;
+}
+.validation-banner strong {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+.val-item {
+  display: flex; gap: 8px; align-items: flex-start;
+  margin-top: 4px;
+}
+.val-icon { flex-shrink: 0; margin-top: 1px; }
+  background: var(--red-light);
+  border: 1px solid #fca5a5;
+  border-left: 4px solid var(--red);
+  border-radius: 3px;
+  padding: 14px 18px;
+  color: var(--red);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 56px 24px;
+  color: var(--muted);
+}
+.empty-mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 12px;
+  opacity: 0.6;
+}
+
+.footer-mark {
+  text-align: center;
+  padding: 20px;
+  margin-top: 20px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.footer-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  color: var(--ink);
+  font-style: italic;
+}
+.footer-sep { color: var(--rule); font-size: 16px; }
+.footer-powered {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  display: flex; align-items: center; gap: 6px;
+}
+.footer-claude {
+  background: var(--ink);
+  color: #fff;
+  font-size: 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 40px;
+  line-height: 1.8;
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.3px;
+}
+
+@media(max-width:600px){
+  header{padding:0 16px;}
+  .header-tags{display:none;}
+  main{padding:24px 12px 60px;}
+  .diag-main{grid-template-columns:auto 1fr; gap:10px;}
+  .conf-wrap{display:none;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <div class="logo-main">Auto Coding</div>
+    <div class="logo-sep"></div>
+    <div class="logo-sub">Clinical Coding Assistant</div>
+  </div>
+  <div class="header-tags">
+    <span class="htag htag-red">ICD-10 2nd Ed. 2005</span>
+    <span class="htag htag-outline">ICD-9-CM Vol.3</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="section-rule">
+    <div class="section-rule-line"></div>
+    <div class="section-rule-label">Input Klinis</div>
+    <div class="section-rule-line"></div>
+  </div>
+
+  <div class="input-card">
+    <div class="input-card-header">
+      <div class="input-card-title">Catatan SOAP / Anamnesa / Resume Medis</div>
+      <div class="lang-tags">
+        <span class="lang-tag">ID</span>
+        <span class="lang-tag">EN</span>
+      </div>
+    </div>
+    <div class="input-card-body">
+      <textarea id="clinicalInput" placeholder="Paste catatan klinis di sini...&#10;&#10;Contoh: Ny. X, G2P1A0 hamil 7 bulan, partus prematurus 32-33 minggu dengan SC ai gemelli anak ke 2 + TTTS + IUFD + bekas SC + kista ovarium bilateral. Tindakan: SCTP + kistektomi bilateral."></textarea>
+      <div class="examples-row">
+        <button class="ex-btn" onclick="loadEx(1)">▸ Obstetri (Ny. X)</button>
+        <button class="ex-btn" onclick="loadEx(2)">▸ STEMI</button>
+        <button class="ex-btn" onclick="loadEx(3)">▸ Stroke + HT</button>
+        <button class="ex-btn" onclick="loadEx(4)">▸ DM + Retinopati</button>
+        <button class="ex-btn" onclick="loadEx(5)">▸ Fraktur Femur</button>
+      </div>
+      <div class="action-row">
+        <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">
+          <span id="btnSpinner" style="display:none"><span class="spinner"></span></span>
+          <span id="btnLabel">Analyze &amp; Code</span>
+        </button>
+        <button class="btn-clear" onclick="clearAll()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="emptyState">
+    <div class="empty-state">
+      <div style="font-size:40px; opacity:.2">⚕</div>
+      <div class="empty-mono">Masukkan catatan klinis untuk memulai coding</div>
+    </div>
+  </div>
+
+  <div id="resultsSection">
+
+    <div class="section-rule">
+      <div class="section-rule-line"></div>
+      <div class="section-rule-label">Hasil Coding</div>
+      <div class="section-rule-line"></div>
+    </div>
+
+    <div id="summaryBox"></div>
+
+    <!-- Diagnosis coding -->
+    <div class="coding-table-wrap" id="diagTableWrap">
+      <div class="coding-table-header">
+        <div class="coding-table-title">Diagnosis — ICD-10 2nd Edition 2005</div>
+        <div class="coding-count" id="diagCount">–</div>
+      </div>
+      <div id="diagList"></div>
+      <div class="legend">
+        <div class="legend-item"><span style="color:var(--red);font-size:13px">†</span> Dagger = kode etiologi (Diagnosis Utama jika berpasangan)</div>
+        <div class="legend-item"><span style="color:var(--blue);font-size:13px">*</span> Asterisk = kode manifestasi (Diagnosis Sekunder)</div>
+        <div class="legend-item"><span style="background:var(--red);color:#fff;padding:1px 5px;border-radius:2px;font-size:9px">DU</span> Diagnosis Utama</div>
+        <div class="legend-item"><span style="background:var(--blue-light);color:var(--blue);padding:1px 5px;border-radius:2px;font-size:9px;border:1px solid #93c5fd">DS</span> Diagnosis Sekunder</div>
+      </div>
+    </div>
+
+    <!-- Procedure coding -->
+    <div class="proc-table-wrap" id="procTableWrap">
+      <div class="proc-header">
+        <div class="proc-header-title">Prosedur — ICD-9-CM Volume 3</div>
+        <div class="coding-count" id="procCount" style="color:#86efac">–</div>
+      </div>
+      <div id="procList"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<p class="disclaimer">
+  ⚠ Tools ini hanya untuk keperluan akademik / belajar coding.<br>
+  Selalu verifikasi dengan buku ICD-10 Vol.1, Vol.3 dan ICD-9-CM yang berlaku.<br>
+  Bukan pengganti penilaian coder profesional bersertifikat.
+</p>
+
+<div class="footer-mark">
+  <span class="footer-name">Created by Dimas Abimanyu</span>
+  <span class="footer-sep">·</span>
+  <span class="footer-powered">
+    Powered by <span class="footer-claude">Claude AI</span>
+  </span>
+</div>
+
+<script>
+const EXAMPLES = {
+  1: `Nama : Ny. X umur 37 tahun dirawat di RS XYZ masuk ruang perawatan tanggal 20 Mei 2018 diizinkan pulang tanggal 25 Mei 2018, dirawat di kelas II dengan rincian perawatan :
+Diagnosis utama dan riwayat : G2P1A0 hamil 7 bulan , diketahui fetus ke 2 dengan kista rahim
+Essential physical examination : T : 110 / 70, Hb : 9,1
+Diagnosis : P2 A0 partus prematurus 32-33 minggu dengan SC ai gemelli anak ke 2 + TTTS + IUFD + bekas SC + kista ovarium bilateral
+Tindakan : SCTP + kistektomi bilateral`,
+  2: `Tn. A, 58 thn. Nyeri dada kiri menjalar ke lengan kiri sejak 3 jam, keringat dingin.
+EKG: ST elevasi lead II, III, aVF. Troponin I (+).
+Diagnosis: STEMI inferior. Riwayat DM tipe 2.
+Tindakan: Primary PCI, pemasangan stent LAD.`,
+  3: `Ny. B, 65 thn. Tiba-tiba tidak bisa bicara dan lemah separuh badan kanan, 2 jam lalu.
+TD 200/120. CT scan: hiperdensitas ganglia basalis kiri.
+Diagnosis: Stroke hemoragik + Hipertensi stage 2.
+Tindakan: Rawat ICU, tidak ada tindakan operatif.`,
+  4: `Tn. C, 52 thn. DM tipe 2 sejak 10 tahun, penglihatan kabur progresif 6 bulan.
+GDS 380, HbA1c 11.5%. Funduskopi: proliferative diabetic retinopathy ODS.
+Diagnosis: DM tipe 2 dengan retinopati diabetik proliferatif bilateral.
+Tindakan: Laser fotokoagulasi retina OD.`,
+  5: `Tn. D, 42 thn. Kecelakaan lalu lintas, nyeri dan deformitas paha kiri.
+X-Ray: fraktur femur 1/3 tengah kiri, displaced.
+Diagnosis: Fraktur shaft femur sinistra.
+Tindakan: ORIF femur sinistra dengan nail intramedular.`
+};
+
+function loadEx(n) {
+  document.getElementById('clinicalInput').value = EXAMPLES[n];
+}
+
+function clearAll() {
+  document.getElementById('clinicalInput').value = '';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = on;
+  document.getElementById('btnSpinner').style.display = on ? 'inline' : 'none';
+  document.getElementById('btnLabel').textContent = on ? 'Menganalisis...' : 'Analyze & Code';
+}
+
+function showError(msg) {
+  document.getElementById('resultsSection').style.display = 'block';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('summaryBox').innerHTML = `<div class="error-box">⚠ ${msg}</div>`;
+  document.getElementById('diagList').innerHTML = '';
+  document.getElementById('procList').innerHTML = '';
+  document.getElementById('diagCount').textContent = 'Error';
+  document.getElementById('procCount').textContent = 'Error';
+}
+
+async function analyze() {
+  const input = document.getElementById('clinicalInput').value.trim();
+  if (!input) return;
+  setLoading(true);
+
+  const PROMPT = `You are a certified medical coder expert in ICD-10 2nd Edition 2005 (WHO) and ICD-9-CM Volume 3 procedures. Analyze the clinical note and produce accurate coding following STRICT coding conventions.
+
+CLINICAL NOTE:
+${input}
+
+CODING RULES YOU MUST FOLLOW:
+1. DIAGNOSIS: Use ICD-10 2nd Edition 2005 (WHO) codes only.
+2. PRINCIPAL/DIAGNOSIS UTAMA (DU): Select the condition chiefly responsible for admission after study.
+3. DAGGER-ASTERISK CONVENTION:
+   - Dagger (†) = etiology code → always DU if it is the primary condition
+   - Asterisk (*) = manifestation code → always DS, NEVER DU
+   - Both codes must be assigned together; dagger listed first
+4. VOLUME 3 INDEX: Show lead term path exactly as it appears in ICD-10 Vol.3 Alphabetical Index.
+5. VOLUME 1 TABULAR: For each code, check and report from Volume 1:
+   - Includes notes
+   - Excludes notes (important! flag if current case might be excluded)
+   - Use additional code instructions
+   - Code first instructions
+   - Any other instructional notes relevant to the case
+6. VALIDATION: After assigning all codes, check for:
+   - Asterisk code assigned as DU (ERROR)
+   - Missing paired dagger/asterisk code
+   - Excludes note violated
+   - Missing "use additional code" companion
+   - DU selection questionable
+7. PROCEDURE: Use ICD-9-CM Volume 3, show lead term path.
+8. Indonesian abbreviations:
+   SC/SCTP=sectio caesarea transperitonealis, TTTS=twin-to-twin transfusion syndrome,
+   IUFD=intrauterine fetal death, gemelli=multiple gestation twins,
+   partus prematurus=preterm labour, kista ovarium=ovarian cyst,
+   kistektomi=ovarian cystectomy, bekas SC=uterine scar from previous caesarean,
+   G2P1A0=gravida 2 para 1 abortus 0, P2A0=para 2 abortus 0,
+   HT=hypertension, DM=diabetes mellitus, OD/OS/ODS=oculus dexter/sinister/uterque,
+   ORIF=open reduction internal fixation, ai=atas indikasi (due to / because of),
+   Hb=hemoglobin, TD=tekanan darah (blood pressure)
+
+Return ONLY a valid JSON object. NO markdown, NO backticks, NO text outside JSON:
+
+{
+  "summary": "Ringkasan klinis 2-3 kalimat",
+  "validations": [
+    {
+      "type": "ERROR|WARNING|INFO",
+      "message": "Deskripsi masalah atau catatan coding"
+    }
+  ],
+  "diagnoses": [
+    {
+      "role": "DU",
+      "code": "O34.2",
+      "dagger_asterisk": "none",
+      "description": "Maternal care due to uterine scar from previous surgery",
+      "category": "Chapter XV — Pregnancy, childbirth and the puerperium",
+      "confidence": 92,
+      "lead_term_path": "Section\\n- caesarean (see also Delivery, caesarean) O82.9\\n- caesarean (for) O82.9\\n- - previous\\n- - - caesarean section O34.2\\nO34.2 Maternal care due to uterine scar from previous surgery",
+      "volume1_notes": [
+        {"type": "includes", "text": "..."},
+        {"type": "excludes", "text": "..."},
+        {"type": "note", "text": "..."},
+        {"type": "use_additional", "text": "..."},
+        {"type": "code_first", "text": "..."}
+      ],
+      "paired_with": "",
+      "reasoning": "Alasan pemilihan kode ini"
+    }
+  ],
+  "procedures": [
+    {
+      "code": "74.1",
+      "description": "Low cervical caesarean section",
+      "category": "ICD-9-CM Vol.3",
+      "confidence": 95,
+      "lead_term_path": "Cesarean section\\n- low cervical 74.1",
+      "volume1_notes": [
+        {"type": "includes", "text": "..."}
+      ],
+      "reasoning": "Alasan kode prosedur ini"
+    }
+  ]
+}
+
+For dagger_asterisk: "dagger", "asterisk", or "none".
+For volume1_notes type: "includes", "excludes", "note", "use_additional", "code_first".
+Only include volume1_notes entries that are actually present and relevant — omit if none.
+validations array: include ERRORs (coding violations), WARNINGs (possible issues), INFOs (important reminders). Empty array [] if no issues.
+Output MUST be valid complete JSON only.`;
+
+  try {
+    const resp = await fetch("/api/claude", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: PROMPT })
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    const raw = data.text;
+    let clean = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Respons tidak mengandung JSON yang valid.");
+    clean = match[0];
+
+    let result;
+    try {
+      result = JSON.parse(clean);
+    } catch(e) {
+      // repair truncated JSON
+      let fixed = clean.replace(/,\s*$/, '').replace(/,\s*\{[^{}]*$/, '');
+      const opens = (fixed.match(/\[/g)||[]).length - (fixed.match(/\]/g)||[]).length;
+      const braces = (fixed.match(/\{/g)||[]).length - (fixed.match(/\}/g)||[]).length;
+      for(let i=0;i<opens;i++) fixed += ']';
+      for(let i=0;i<braces;i++) fixed += '}';
+      result = JSON.parse(fixed);
+    }
+
+    renderResults(result);
+  } catch(err) {
+    showError(`Terjadi error: ${err.message}`);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderLeadPath(pathStr) {
+  if (!pathStr) return '';
+  return pathStr.split('\n').map(line => {
+    // Highlight code at end of line
+    return line
+      .replace(/^(Section|Section$)/, '<span style="font-weight:600;color:var(--ink)">$1</span>')
+      .replace(/([A-Z]\d{2}[\.\d]*)\s*$/, '<span class="lp-code">$1</span>')
+      .replace(/(\d{2}[\.\d]*)\s*$/, '<span class="lp-code">$1</span>');
+  }).join('\n');
+}
+
+function renderVol1Notes(notes) {
+  if (!notes || notes.length === 0) return '';
+  const typeMap = {
+    includes:     { cls: 'vnt-includes',   label: 'Includes' },
+    excludes:     { cls: 'vnt-excludes',   label: 'Excludes' },
+    note:         { cls: 'vnt-note',       label: 'Note' },
+    use_additional: { cls: 'vnt-use',      label: 'Use additional code' },
+    code_first:   { cls: 'vnt-code-first', label: 'Code first' }
+  };
+  const items = notes.map(n => {
+    const t = typeMap[n.type] || { cls: 'vnt-note', label: n.type };
+    return `<div class="vol1-note">
+      <span class="vol1-note-type ${t.cls}">${t.label}</span>
+      <span>${n.text}</span>
+    </div>`;
+  }).join('');
+  return `<div class="vol1-box">
+    <div class="vol1-label">▸ Volume 1 Tabular Notes</div>
+    <div class="vol1-notes">${items}</div>
+  </div>`;
+}
+
+function renderValidations(validations) {
+  if (!validations || validations.length === 0) return '';
+  const iconMap = { ERROR: '🔴', WARNING: '🟡', INFO: '🔵' };
+  const items = validations.map(v =>
+    `<div class="val-item"><span class="val-icon">${iconMap[v.type] || 'ℹ'}</span><span><strong>${v.type}:</strong> ${v.message}</span></div>`
+  ).join('');
+  return `<div class="validation-banner"><strong>⚠ Validasi Kaidah Coding</strong>${items}</div>`;
+}
+
+function renderResults(result) {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'block';
+
+  // Summary
+  document.getElementById('summaryBox').innerHTML = `
+    <div class="summary-strip">
+      <strong>Ringkasan Klinis</strong>
+      ${result.summary || ''}
+    </div>
+    ${renderValidations(result.validations)}`;
+
+  // Diagnoses
+  const diagnoses = result.diagnoses || [];
+  document.getElementById('diagCount').textContent = `${diagnoses.length} kode`;
+
+  document.getElementById('diagList').innerHTML = diagnoses.map((d, i) => {
+    const isDagger = d.dagger_asterisk === 'dagger';
+    const isAsterisk = d.dagger_asterisk === 'asterisk';
+    const badgeClass = d.role === 'DU' ? 'du' : 'ds';
+    const badgeLabel = d.role === 'DU' ? 'DU' : 'DS';
+    const dagMark = isDagger ? `<span class="dagger-mark" title="Kode Etiologi (Dagger)">†</span>` : '';
+    const astMark = isAsterisk ? `<span class="asterisk-mark" title="Kode Manifestasi (Asterisk)">*</span>` : '';
+    const pairNote = d.paired_with ? `<span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;"> → pasangan: ${d.paired_with}</span>` : '';
+
+    return `<div class="diag-item" style="animation-delay:${i*0.06}s">
+      <div class="diag-main">
+        <div><span class="du-badge ${badgeClass}">${badgeLabel}</span></div>
+        <div class="diag-center">
+          <div class="diag-code-row">
+            <span class="diag-code">${d.code}</span>
+            ${dagMark}${astMark}${pairNote}
+          </div>
+          <div class="diag-desc">${d.description}</div>
+          <div class="diag-category">${d.category}</div>
+        </div>
+        <div class="conf-wrap">
+          <div class="conf-val">${d.confidence}%</div>
+          <div class="conf-bar"><div class="conf-fill" style="width:${d.confidence}%"></div></div>
+        </div>
+      </div>
+      ${d.lead_term_path ? `<div class="lead-term-box">
+        <div class="lead-label">▸ Volume 3 Index Path</div>
+        <div class="lead-path">${renderLeadPath(d.lead_term_path)}</div>
+      </div>` : ''}
+      ${renderVol1Notes(d.volume1_notes)}
+      ${d.reasoning ? `<div class="reasoning-box">💬 ${d.reasoning}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Procedures
+  const procedures = result.procedures || [];
+  document.getElementById('procCount').textContent = `${procedures.length} kode`;
+
+  document.getElementById('procList').innerHTML = procedures.map((p, i) => `
+    <div class="diag-item" style="animation-delay:${(diagnoses.length + i)*0.06}s">
+      <div class="diag-main">
+        <div><span class="du-badge proc">PROC</span></div>
+        <div class="diag-center">
+          <div class="diag-code-row">
+            <span class="diag-code">${p.code}</span>
+          </div>
+          <div class="diag-desc">${p.description}</div>
+          <div class="diag-category">${p.category}</div>
+        </div>
+        <div class="conf-wrap">
+          <div class="conf-val">${p.confidence}%</div>
+          <div class="conf-bar"><div class="conf-fill" style="width:${p.confidence}%"></div></div>
+        </div>
+      </div>
+      ${p.lead_term_path ? `<div class="lead-term-box">
+        <div class="lead-label">▸ ICD-9-CM Vol.3 Index Path</div>
+        <div class="lead-path">${renderLeadPath(p.lead_term_path)}</div>
+      </div>` : ''}
+      ${renderVol1Notes(p.volume1_notes)}
+      ${p.reasoning ? `<div class="reasoning-box">💬 ${p.reasoning}</div>` : ''}
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
