@@ -1,6 +1,12 @@
 [build]
-  publish = "."
+  publish = "icd10-app"
   functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[functions."claude"]
+  timeout = 26
 
 [[redirects]]
   from = "/api/claude"
